@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function(){
+jQuery.fn.dataTable.Api.register( 'sum()', function ( ) {
+    return this.flatten().reduce( function ( a, b ) {
+        if ( typeof a === 'string' ) {
+            a = a.replace(/[^\d.-]/g, '') * 1;
+        }
+        if ( typeof b === 'string' ) {
+            b = b.replace(/[^\d.-]/g, '') * 1;
+        }
+ 
+        return a + b;
+    }, 0 );
+} );
+var term=$("#term").val();
+var table = $('#ads_table').DataTable( {
+    ajax: {
+    dataType: "json",
+    url: "https://graph.facebook.com/v3.2/ads_archive",
+    data: function(d){
+    d.ad_reached_countries=['UA'],
+    d.search_terms= term,
+    d.ad_type="POLITICAL_AND_ISSUE_ADS",
+    d.ad_active_status="ALL",
+    d.limit=10000,
+    d.fields='spend,currency,funding_entity,ad_delivery_start_time,ad_snapshot_url',
+    d.access_token= "EAAFYGs5Ae8IBAEvhrrggbcJSvANIZCbi6SK4RV6wJADXidfWYEoJPtpJJ0M6DZCAyyYXLSsru4euzrJVRArUT6ZAJ00b3Mrq7LRkguAG4y5vUFNFGCgmHZAlZCkNLFoKlMDjzZASIPANC5BEMTYTidIZAu9Q4FAFZAs3cypTGQGcZB4ZBNv3CuHZChY"
+    }
+ },
+ "columnDefs": [
+ {
+    "targets": -1,
+    "render": function ( data, type, row, meta ) {
+      return '<a href="'+data+'">Open</a>';
+    }
+  },
+ {
+    "targets": 1,
+    "render": function ( data, type, row, meta ) {
+      return data?data:"";
+    }
+  },
+  ],
+ columns: [
+ { "data" : "ad_delivery_start_time"},
+ { "data" : "funding_entity"},
+ { "data" : "currency"},
+ { "data" : "spend.lower_bound"},
+ { "data" : "spend.upper_bound"},
+ { "data" : "ad_snapshot_url"},
+ ]
+ });
+ table.on("draw",function() {
+    var sum=table.column(3,{search:"applied"}).data().sum();
+    $("#lower_sum").val(String(sum));
+    sum=table.column(4,{search:"applied"}).data().sum();
+    $("#upper_sum").val(String(sum));
+ });
+$("#term_button").click( function() {
+    term = $("#term").val();
+    table.ajax.reload();
+});
+});
+</script>
+</head>
+<body>
+<div>
+<input type="text" id="term" value="Зеленський">
+<button id="term_button">Get</button>
+<label for="lower_sum">Lower sum</label>
+<input id=lower_sum readonly type="number" value="0.0"> 
+<label for="upper_sum">Upper sum</label>
+<input id=upper_sum readonly type="number" value="0.0"> 
+</div>
+<table id="ads_table" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Start Time</th>
+                <th>Funding Entity</th>
+                <th>Currency</th>
+                <th>Spend Lower bound</th>
+                <th>Spend Upper bound</th>
+                <th>URL</th>
+            </tr>
+        </thead>
+ </table>
+
+</body>
+</html>
